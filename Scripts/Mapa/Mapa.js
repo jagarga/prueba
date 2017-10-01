@@ -7,6 +7,7 @@ Ext.require([
  * A plugin for Ext.grid.column.Column s that overwrites the internal cellTpl to
  * support legends.
  */
+
 Ext.define('BasicTreeColumnLegends', {
     extend: 'Ext.AbstractPlugin',
     alias: 'plugin.basic_tree_column_legend',
@@ -95,6 +96,7 @@ Ext.application({
         var olMap;
         var treeStore;
         var panelleft; //panel izquierdo
+        var panelright; //panel derecho
         var menu; //menu por debajo menu bootstral
         var overviewMap; //Mapa de posicion
         var ovMapPanel; //Panel para el mapa de posicion
@@ -149,7 +151,7 @@ Ext.application({
         //});
 
         olMap = new ol.Map({
-            layers: [layer],         
+            layers: [layer],
             view: new ol.View({
                 projection: "EPSG:4326",
                 center: [-3.68, 40.48],
@@ -157,12 +159,29 @@ Ext.application({
             })
         });
 
-        mapComponent = Ext.create('GeoExt.component.Map', {
-            map: olMap
-        });
+
+        //BARRA DE HERRAMIENTAS (ACCIONES)
+        var ctrl, toolbarItems = [],
+            action, actions = {};
+
+        toolbarItems.push("-");
+        toolbarItems.push(Ext.create('Ext.form.field.Text', {
+            id: 'textgeocode',
+            value: 'Buscar direccion'
+        }));
 
 
         //MAPA CENTRAL
+
+        mapComponent = Ext.create('GeoExt.component.Map', {
+            map: olMap,
+            dockedItems: [{
+                xtype: 'toolbar',
+                dock: 'top',
+                items: toolbarItems
+            }]
+        });
+
         mapPanel = Ext.create('Ext.panel.Panel', {
             region: 'center',
             layout: 'fit',
@@ -238,6 +257,287 @@ Ext.application({
             ]
         });
 
+
+
+        //PANEL LATERAL DERECHO
+
+
+        //Variables para el select de capas de analisis
+        Ext.define('capasmodel', {
+            extend: 'Ext.data.Model',
+            fields: [{
+                type: 'string',
+                name: 'name'
+            },]
+        });
+
+
+        var capas = olMap.getLayers();
+        var capasmodel = '[';
+
+        for (i = 0; i < capas.length; i++) {
+
+            capasmodel = capasmodel + '{"name":"' + capas[i].name + '"},'
+
+        }
+        capasmodel = capasmodel + ']'
+
+        capasmodel = eval(capasmodel);
+
+
+        var capastore = Ext.create('Ext.data.Store', {
+            model: 'capasmodel',
+            data: capasmodel
+        });
+
+
+
+        panelright = Ext.create('Ext.form.Panel', {
+            //hidden : false,
+            title: 'Spatial Analysis',
+            //responsive design
+            plugins: 'responsive',
+            layout: 'fit',
+            resizable: 'true',
+            responsiveConfig: {
+                landscape: {
+                    region: 'east'
+                },
+                portrait: {
+                    region: 'north'
+                },
+                'height < 400 && wide': {
+                    hidden: true,
+                },
+                'height >= 400 && wide': {
+                    hidden: false,
+                },
+            },
+            collapsed: true,
+            collapsible: true,
+
+            items: [{
+
+                xtype: "tabpanel",  //Grupo de pestañas
+                id: "tabpanel",
+                width: 350,
+                plugins: 'responsive',
+                responsiveConfig: {
+                    'width < 700': {
+                        width: 300,
+                    },
+                    'width >= 700': {
+                        width: 350,
+                    },
+                },
+                // height: 350,
+                //autoHeight: true,
+                autowidth: true,
+                activeTab: 0,
+                items: [{
+                    title: 'Location seeker', //pestaña1
+                    bodyPadding: 0,
+                    //xtype: "tabpanel",
+                    layout: 'accordion',
+                    id: 'acordeon',
+                    defaults: {
+                        bodyStyle: 'padding:15px'
+                    },
+                    layoutConfig: {
+                        titleCollapse: false,
+                        animate: true,
+                        activeOnTop: true,
+                    },
+                    items: [{
+                        title: 'Favorable conditions',
+                        id: 'favorable',
+                        items: [
+
+                            { //Selector del grupo de capas
+
+                                xtype: 'combo',
+                                fieldLabel: 'Layer Group',
+                                id: 'selectgroup',
+                                displayField: 'name',
+                                width: 210,
+                                store: capastore,
+                                queryMode: 'local',
+                                typeAhead: true
+                            }, { //Selector de la capa de cada grupo
+
+                                xtype: 'combo',
+                                fieldLabel: 'Single Layer',
+                                id: 'selectlayer',
+                                displayField: 'name',
+                                width: 210,
+                                store: capastore,
+                                queryMode: 'local',
+                                typeAhead: true
+                            }, {
+                                xtype: 'textfield',
+                                fieldLabel: 'Maximum influence distance',
+                                id: 'buffer_dist',
+                                value: "100",
+                                width: 210,
+                            }, {
+                                xtype: 'button',
+                                text: '<div style="color: Black">Add Condition</div>',
+                                height: 25,
+                                margin: "15 2 4 2",
+                                //escuchador de eventos para cuando pulsamos el raton o pasamos por encima el raton
+                                listeners: {
+                                    //evento on click
+                                    click: function () {
+
+
+
+                                    },
+                                }
+
+
+                            }
+
+                        ]
+                    }, {
+                        title: 'Disfavorable conditions',
+                        id: 'disfavorable',
+                        items: [
+
+                            { //Selector del grupo de capas
+
+                                xtype: 'combo',
+                                fieldLabel: 'Layer Group',
+                                id: 'selectgroup_dis',
+                                displayField: 'name',
+                                width: 210,
+                                store: capastore,
+                                queryMode: 'local',
+                                typeAhead: true
+                            }, { //Selector de la capa de cada grupo
+
+                                xtype: 'combo',
+                                fieldLabel: 'Single Layer',
+                                id: 'selectlayer_dis',
+                                displayField: 'name',
+                                width: 210,
+                                store: capastore,
+                                queryMode: 'local',
+                                typeAhead: true
+                            }, {
+                                xtype: 'textfield',
+                                fieldLabel: 'Maximum influence distance',
+                                id: 'buffer_dist_dis',
+                                value: "100",
+                                width: 210,
+                            }, {
+                                xtype: 'button',
+                                text: '<div style="color: Black">Add Condition</div>',
+                                height: 25,
+                                margin: "15 2 4 2",
+                                //escuchador de eventos para cuando pulsamos el raton o pasamos por encima el raton
+                                listeners: {
+                                    //evento on click
+                                    click: function () {
+
+
+
+                                    },
+                                }
+
+
+                            }
+
+                        ]
+                    }
+                    ],
+                    fbar: {
+                        //style: { background:'#08088A', marginTop: '0px' , borderWidth:'0px'},
+                        items: [{
+                            xtype: 'label',
+                            id: 'distancia',
+                            text: '',
+                        },
+
+
+                        { //boton para el ejecutar el calculo de ruta
+                            xtype: 'button',
+                            text: '<div style="color: Black">Calculate location</div>',
+                            height: 25,
+                            //escuchador de eventos para cuando pulsamos el raton o pasamos por encima el raton
+                            listeners: {
+                                //evento on click
+                                click: function () {
+
+                                },
+                            }
+
+                        }
+                        ]
+                    }
+
+                }, {
+                    title: 'Routing', //pestaña2
+                    bodyPadding: 0,
+                    //xtype: "tabpanel",
+                    layout: 'accordion',
+                    id: 'acordeon2',
+                    defaults: {
+                        bodyStyle: 'padding:15px'
+                    },
+                    layoutConfig: {
+                        titleCollapse: false,
+                        animate: true,
+                        activeOnTop: true,
+                    },
+                    items: [{
+                        title: 'By direction',
+                        id: 'pordireccion',
+                        items: [
+
+                        ]
+                    }, {
+                        title: 'By coordinates',
+                        id: 'porcoordenadas',
+                        items: [
+
+                        ]
+                    }
+                    ],
+                    fbar: {
+                        //style: { background:'#08088A', marginTop: '0px' , borderWidth:'0px'},
+                        items: [{
+                            xtype: 'label',
+                            id: 'distancia',
+                            text: '',
+                        },
+
+
+                        { //boton para el ejecutar el calculo de ruta
+                            xtype: 'button',
+                            text: '<div style="color: Black">Calcular ruta</div>',
+                            height: 25,
+                            //escuchador de eventos para cuando pulsamos el raton o pasamos por encima el raton
+                            listeners: {
+                                //evento on click
+                                click: function () {
+
+                                },
+                            }
+
+                        }
+                        ]
+                    }
+
+
+
+
+                }]
+            }]
+        });
+
+
+
+
         //MENU PRINCIPAL (Lo ponemos vacioa para que el mapa no tape el menu bootstrap)
         menu = Ext.create('Ext.form.Panel', {
             id: 'menu',
@@ -274,7 +574,8 @@ Ext.application({
             items: [
                 menu,
                 mapPanel,
-                panelleft
+                panelleft,
+                panelright
             ]
         });
     }
