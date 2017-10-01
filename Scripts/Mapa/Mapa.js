@@ -267,6 +267,7 @@ Ext.application({
         });
 
 
+
         //ELEMENTO PRINCIPAL EXTJS
         Ext.create('Ext.Viewport', {
             layout: 'border',
