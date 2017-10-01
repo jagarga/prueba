@@ -151,10 +151,20 @@ Ext.application({
         //});
 
         olMap = new ol.Map({
+            controls: ol.control.defaults().extend([
+                new ol.control.FullScreen(),
+                new ol.control.ZoomToExtent({
+                    extent: [
+                        393335.175784, 3896421.18109,
+                        401256.8368764955, 5556421.18109
+                    ]
+                })
+            ]),
             layers: [layer],
             view: new ol.View({
-                projection: "EPSG:4326",
-                center: [-3.68, 40.48],
+                projection: "EPSG:3857",
+                center: ol.proj.transform([-3.68, 40.48], 'EPSG:4326', 'EPSG:3857'),
+                //center: [-3.68, 40.48],
                 zoom: 5
             })
         });
@@ -167,7 +177,17 @@ Ext.application({
         toolbarItems.push("-");
         toolbarItems.push(Ext.create('Ext.form.field.Text', {
             id: 'textgeocode',
-            value: 'Buscar direccion'
+            value: 'Search adress'
+        }));
+
+        toolbarItems.push(Ext.create('Ext.button.Button', {
+            text: 'Search',
+            handler: function () {
+                //alert($('#textgeocode-inputEl').val());
+                var direction = $('#textgeocode-inputEl').val();
+                codeAddress(direction, olMap);
+
+            }
         }));
 
 
@@ -175,18 +195,18 @@ Ext.application({
 
         mapComponent = Ext.create('GeoExt.component.Map', {
             map: olMap,
-            dockedItems: [{
-                xtype: 'toolbar',
-                dock: 'top',
-                items: toolbarItems
-            }]
         });
 
         mapPanel = Ext.create('Ext.panel.Panel', {
             region: 'center',
             layout: 'fit',
             border: true,
-            items: [mapComponent]
+            items: [mapComponent],
+            dockedItems: [{
+                xtype: 'toolbar',
+                dock: 'top',
+                items: toolbarItems
+            }]
         });
 
         treeStore = Ext.create('GeoExt.data.store.LayersTree', {
