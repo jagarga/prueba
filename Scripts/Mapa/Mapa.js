@@ -145,6 +145,116 @@ Ext.application({
         });
 
 
+        //TEST GEOJSON
+        var geojsonObject =
+            {
+                'type': 'FeatureCollection',
+                'crs': {
+                    'type': 'name',
+                    'properties': {
+                        'name': 'EPSG:3857'
+                    }
+                },
+                'features': [{
+                    'type': 'Feature',
+                    'geometry': {
+                        'type': 'MultiPolygon',
+                        'coordinates': [
+                            [[[-5.6750576, 38.2550151], [-5.6750405, 38.2550487], [-5.6750309, 38.2550455]],
+                            [[-5.67501, 38.255038], [-5.675011, 38.2550609], [-5.6749818, 38.2550625]],
+                            [[-5.6749792, 38.2550263], [-5.6749956, 38.2549926], [-5.6750576, 38.2550151]]]
+                        ]
+                    }
+                }]
+            };
+
+        var image = new ol.style.Circle({
+            radius: 5,
+            fill: null,
+            stroke: new ol.style.Stroke({ color: 'red', width: 1 })
+        });
+
+        var styles = {
+            'Point': new ol.style.Style({
+                image: image
+            }),
+            'LineString': new ol.style.Style({
+                stroke: new ol.style.Stroke({
+                    color: 'green',
+                    width: 1
+                })
+            }),
+            'MultiLineString': new ol.style.Style({
+                stroke: new ol.style.Stroke({
+                    color: 'green',
+                    width: 1
+                })
+            }),
+            'MultiPoint': new ol.style.Style({
+                image: image
+            }),
+            'MultiPolygon': new ol.style.Style({
+                stroke: new ol.style.Stroke({
+                    color: 'yellow',
+                    width: 1
+                }),
+                fill: new ol.style.Fill({
+                    color: 'rgba(255, 255, 0, 0.1)'
+                })
+            }),
+            'Polygon': new ol.style.Style({
+                stroke: new ol.style.Stroke({
+                    color: 'blue',
+                    lineDash: [4],
+                    width: 3
+                }),
+                fill: new ol.style.Fill({
+                    color: 'rgba(0, 0, 255, 0.1)'
+                })
+            }),
+            'GeometryCollection': new ol.style.Style({
+                stroke: new ol.style.Stroke({
+                    color: 'magenta',
+                    width: 2
+                }),
+                fill: new ol.style.Fill({
+                    color: 'magenta'
+                }),
+                image: new ol.style.Circle({
+                    radius: 10,
+                    fill: null,
+                    stroke: new ol.style.Stroke({
+                        color: 'magenta'
+                    })
+                })
+            }),
+            'Circle': new ol.style.Style({
+                stroke: new ol.style.Stroke({
+                    color: 'red',
+                    width: 2
+                }),
+                fill: new ol.style.Fill({
+                    color: 'rgba(255,0,0,0.2)'
+                })
+            })
+        };
+
+        var styleFunction = function (feature) {
+            return styles[feature.getGeometry().getType()];
+        };
+
+        var vectorSource = new ol.source.Vector({
+            features: (new ol.format.GeoJSON()).readFeatures(geojsonObject)
+        });
+
+        var vectorLayer = new ol.layer.Vector({
+            source: vectorSource,
+            style: styleFunction,
+            name: 'OpenStreetMap Buildings'
+        });
+        //FIN TEST GEOJSON
+
+
         //group = new ol.layer.Group({
         //    layers: [layer, layer2],
         //    name: 'Base Layers'
@@ -160,7 +270,7 @@ Ext.application({
                     ]
                 })
             ]),
-            layers: [layer],
+            layers: [layer, vectorLayer],
             view: new ol.View({
                 projection: "EPSG:3857",
                 center: ol.proj.transform([-3.68, 40.48], 'EPSG:4326', 'EPSG:3857'),
@@ -168,6 +278,7 @@ Ext.application({
                 zoom: 5
             })
         });
+
 
 
         //BARRA DE HERRAMIENTAS (ACCIONES)
@@ -479,7 +590,8 @@ Ext.application({
                         },
 
 
-                        { //boton para el ejecutar el calculo de ruta
+                            {
+                            //boton para el ejecutar el calculo de ruta
                             xtype: 'button',
                             text: '<div style="color: Black">Calculate location</div>',
                             height: 25,
@@ -491,7 +603,32 @@ Ext.application({
                                 },
                             }
 
-                        }
+                            },
+
+                            {
+                                xtype: 'button',
+                                text: '<div style="color: Black">TEST POSTGIS</div>',
+                                height: 25,
+                                //escuchador de eventos para cuando pulsamos el raton o pasamos por encima el raton
+                                listeners: {
+                                    //evento on click
+                                    click: function () {
+                                        Ext.Ajax.request({
+                                            url: '/Home/GetLayout',
+                                            params: "",
+                                            headers: { 'Content-Type': 'application/json; charset=utf-8' },
+                                            method: "GET",
+                                            success: function (response) {
+                                                Ext.Msg.alert('Javi, ah\u00ed tienes tu json, ahora vas y lo pintas!', response.responseText, Ext.emptyFn)
+                                            },
+                                            failure: function (response) {
+                                                Ext.Msg.alert('Algo ha ido mal', response, Ext.emptyFn)
+                                            }
+                                        });
+                                    },
+                                },
+
+                            }
                         ]
                     }
 

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Web.Mvc;
+using Npgsql;
 
 namespace WebApplication2.Controllers
 {
@@ -11,6 +12,31 @@ namespace WebApplication2.Controllers
         public ActionResult Index()
         {
             return View();
+        }
+
+        public ActionResult GetLayout()
+        {
+            // Connect to a PostgreSQL database
+            NpgsqlConnection conn = new NpgsqlConnection("Server=localhost;User Id=postgres; Password=postgres;Database=OSM_Spain;");
+            conn.Open();
+
+            // Define a query returning a single row result set
+            string query = "SELECT ST_AsText(geom) FROM public.osm_buildings_a_free_1 limit 5";
+            NpgsqlCommand command = new NpgsqlCommand(query, conn);
+
+            // Execute the query and obtain the value of the first column of the first row
+            NpgsqlDataReader dr = command.ExecuteReader();
+            object geom = null;
+
+            while (dr.Read())
+            {
+                geom = dr[0];
+            }
+
+            conn.Close();
+
+            return Json(new { geom = geom ?? string.Empty }, JsonRequestBehavior.AllowGet);
+
         }
     }
 }
