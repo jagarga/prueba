@@ -81,6 +81,8 @@ var mapComponent;
 var mapPanel;
 var treePanel;
 var treePanel2;
+var themes;
+
 
 Ext.application({
     name: 'Name_application',
@@ -244,7 +246,10 @@ Ext.application({
         };
 
         var vectorSource = new ol.source.Vector({
-            features: (new ol.format.GeoJSON()).readFeatures(geojsonObject)
+            features: (new ol.format.GeoJSON()).readFeatures(geojsonObject, {
+                dataProjection: 'EPSG:4326',
+                featureProjection: 'EPSG:3857'
+            })
         });
 
         var vectorLayer = new ol.layer.Vector({
@@ -260,21 +265,26 @@ Ext.application({
         //    name: 'Base Layers'
         //});
 
+        //Proyecion del mapa
+        var Projection = new ol.proj.Projection({
+            code: 'EPSG:3857',
+            units: 'm'
+        });
+
         olMap = new ol.Map({
             controls: ol.control.defaults().extend([
                 new ol.control.FullScreen(),
                 new ol.control.ZoomToExtent({
-                    extent: [
-                        393335.175784, 3896421.18109,
-                        401256.8368764955, 5556421.18109
-                    ]
+                    //extent: [
+                    //    393335.175784, 3896421.18109,
+                    //    401256.8368764955, 5556421.18109
+                    //]
                 })
             ]),
             layers: [layer, vectorLayer],
             view: new ol.View({
-                projection: "EPSG:3857",
+                projection: Projection,
                 center: ol.proj.transform([-3.68, 40.48], 'EPSG:4326', 'EPSG:3857'),
-                //center: [-3.68, 40.48],
                 zoom: 5
             })
         });
@@ -394,33 +404,14 @@ Ext.application({
 
 
         //Variables para el select de capas de analisis
-        Ext.define('capasmodel', {
-            extend: 'Ext.data.Model',
-            fields: [{
-                type: 'string',
-                name: 'name'
-            },]
-        });
 
-
-        var capas = olMap.getLayers();
-        var capasmodel = '[';
-
-        for (i = 0; i < capas.length; i++) {
-
-            capasmodel = capasmodel + '{"name":"' + capas[i].name + '"},'
-
-        }
-        capasmodel = capasmodel + ']'
-
-        capasmodel = eval(capasmodel);
-
-
-        var capastore = Ext.create('Ext.data.Store', {
+        selecttheme();   //funcion que hace consulta sobre postgis para obtener los nombres
+        
+        var themestore = Ext.create('Ext.data.Store', {
             model: 'capasmodel',
-            data: capasmodel
+            data: themes
         });
-
+        //fin obtencion variables para el combobox de temas de capas
 
 
         panelright = Ext.create('Ext.form.Panel', {
@@ -484,14 +475,30 @@ Ext.application({
                         id: 'favorable',
                         items: [
 
-                            { //Selector del grupo de capas
+                            { //Selector de la tematica para desplegar el grupo de capas
+
+                                xtype: 'combo',
+                                fieldLabel: 'Layer Theme',
+                                id: 'selecttheme',
+                                displayField: 'name',
+                                value: 'Select theme',
+                                width: 265,
+                                store: themestore,
+                                queryMode: 'local',
+                                typeAhead: true,
+                                listeners: {
+                                    select: function (combo, records) {
+                                        alert(combo.getValue());
+                                    }
+                                }
+                            }, { //Selector del grupo de capas
 
                                 xtype: 'combo',
                                 fieldLabel: 'Layer Group',
                                 id: 'selectgroup',
                                 displayField: 'name',
-                                width: 210,
-                                store: capastore,
+                                width: 265,
+                                store: themestore,
                                 queryMode: 'local',
                                 typeAhead: true
                             }, { //Selector de la capa de cada grupo
@@ -500,8 +507,8 @@ Ext.application({
                                 fieldLabel: 'Single Layer',
                                 id: 'selectlayer',
                                 displayField: 'name',
-                                width: 210,
-                                store: capastore,
+                                width: 265,
+                                store: themestore,
                                 queryMode: 'local',
                                 typeAhead: true
                             }, {
@@ -534,14 +541,25 @@ Ext.application({
                         id: 'disfavorable',
                         items: [
 
-                            { //Selector del grupo de capas
+                            { //Selector de la tematica para desplegar el grupo de capas
+
+                                xtype: 'combo',
+                                fieldLabel: 'Layer Theme',
+                                id: 'selecttheme_dis',
+                                displayField: 'name',
+                                value: 'Select theme',
+                                width: 265,
+                                store: themestore,
+                                queryMode: 'local',
+                                typeAhead: true
+                            },{ //Selector del grupo de capas
 
                                 xtype: 'combo',
                                 fieldLabel: 'Layer Group',
                                 id: 'selectgroup_dis',
                                 displayField: 'name',
-                                width: 210,
-                                store: capastore,
+                                width: 265,
+                                store: themestore,
                                 queryMode: 'local',
                                 typeAhead: true
                             }, { //Selector de la capa de cada grupo
@@ -550,8 +568,8 @@ Ext.application({
                                 fieldLabel: 'Single Layer',
                                 id: 'selectlayer_dis',
                                 displayField: 'name',
-                                width: 210,
-                                store: capastore,
+                                width: 265,
+                                store: themestore,
                                 queryMode: 'local',
                                 typeAhead: true
                             }, {

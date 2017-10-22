@@ -25,3 +25,56 @@ function codeAddress(direction, map) {
         }
     });
 }
+
+//Funciona para llamar a los themas de las capas para el selector
+function selecttheme() {
+
+
+    Ext.Ajax.request({
+        url: '/Home/GetThemes',
+        params: "",
+        headers: { 'Content-Type': 'application/json; charset=utf-8' },
+        method: "GET",
+        async: false,
+        success: function (response) {
+            //themes = response.responseText;
+            var themes = [];
+            var result = JSON.parse(response.responseText);
+
+            for (var i in result['name'])
+                themes.push([result['name'][i]]);
+
+            Ext.define('capasmodel', {
+                extend: 'Ext.data.Model',
+                fields: [{
+                    type: 'string',
+                    name: 'name'
+                },]
+            });
+
+            var capasmodel = '[';
+
+            for (i = 0; i < themes.length; i++) {
+
+                capasmodel = capasmodel + '{"name":"' + strip(themes[i].toString()) + '"},'
+
+            }
+            capasmodel = capasmodel + ']'
+
+            capasmodel = eval(capasmodel);
+
+            window.themes = capasmodel;
+
+
+        },
+        failure: function (response) {
+            Ext.Msg.alert('Something to display the layers was wrong', response, Ext.emptyFn)
+        }
+    });
+ 
+}
+
+function strip(str) {
+    return str.replace(/^\s+|\s+$/g, '');
+}
+
