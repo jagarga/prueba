@@ -414,10 +414,7 @@ Ext.application({
             data: themes
         });
 
-        var groupstore = Ext.create('Ext.data.Store', {
-            model: 'capasmodel',
-            data: groups
-        });
+
 
         var singlelayerstore = Ext.create('Ext.data.Store', {
             model: 'capasmodel',
@@ -500,9 +497,18 @@ Ext.application({
                                 typeAhead: true,
                                 listeners: {
                                     select: function (combo, records) {
-                                        var selected_theme = combo.getValue();
-                                        selectgroup(selected_theme);
-                                        //alert(combo.getValue());
+
+                                        var selected_theme = combo.getValue(); //sacamos el valor seleccionado
+                                        selectgroup(selected_theme);  //buscamos en postgis los grupos de capas de esa tema
+                                        //Añadimos un store con el resultado de esa busqueda
+
+                                        var groupstore = Ext.create('Ext.data.Store', {
+                                            model: 'capasmodel',
+                                            data: groups
+                                        });
+
+                                        Ext.getCmp('selectgroup').bindStore(groupstore);
+
                                     }
                                 }
                             }, { //Selector del grupo de capas
@@ -512,9 +518,25 @@ Ext.application({
                                 id: 'selectgroup',
                                 displayField: 'name',
                                 width: 265,
-                                store: groupstore,
+                                //store: groupstore,
                                 queryMode: 'local',
-                                typeAhead: true
+                                typeAhead: true,
+                                listeners: {
+                                    select: function (combo, records) {
+
+                                        var selected_group = combo.getValue(); //sacamos el valor seleccionado
+                                        selectlayers(selected_group);  //buscamos en postgis los grupos de capas de esa tema
+                                        //Añadimos un store con el resultado de esa busqueda
+
+                                        var singlelayersstore = Ext.create('Ext.data.Store', {
+                                            model: 'capasmodel',
+                                            data: single_layer
+                                        });
+
+                                        Ext.getCmp('selectlayer').bindStore(singlelayersstore);
+
+                                    }
+                                }
                             }, { //Selector de la capa de cada grupo
 
                                 xtype: 'combo',
@@ -522,7 +544,7 @@ Ext.application({
                                 id: 'selectlayer',
                                 displayField: 'name',
                                 width: 265,
-                                store: singlelayerstore,
+                                //store: singlelayerstore,
                                 queryMode: 'local',
                                 typeAhead: true
                             }, {
