@@ -81,7 +81,9 @@ var mapComponent;
 var mapPanel;
 var treePanel;
 var treePanel2;
-var themes;
+var themes; //variable global para almacenar el tema de las capas elegido por el usuario en los combobox
+var groups; //variable global para almacenar el grupo de las capas elegido por el usuario en los combobox
+var single_layer; //variable global para almacenar la capa elegida por el usuario en los combobox
 
 
 Ext.application({
@@ -411,6 +413,16 @@ Ext.application({
             model: 'capasmodel',
             data: themes
         });
+
+        var groupstore = Ext.create('Ext.data.Store', {
+            model: 'capasmodel',
+            data: groups
+        });
+
+        var singlelayerstore = Ext.create('Ext.data.Store', {
+            model: 'capasmodel',
+            data: single_layer
+        });
         //fin obtencion variables para el combobox de temas de capas
 
 
@@ -488,7 +500,9 @@ Ext.application({
                                 typeAhead: true,
                                 listeners: {
                                     select: function (combo, records) {
-                                        alert(combo.getValue());
+                                        var selected_theme = combo.getValue();
+                                        selectgroup(selected_theme);
+                                        //alert(combo.getValue());
                                     }
                                 }
                             }, { //Selector del grupo de capas
@@ -498,7 +512,7 @@ Ext.application({
                                 id: 'selectgroup',
                                 displayField: 'name',
                                 width: 265,
-                                store: themestore,
+                                store: groupstore,
                                 queryMode: 'local',
                                 typeAhead: true
                             }, { //Selector de la capa de cada grupo
@@ -508,7 +522,7 @@ Ext.application({
                                 id: 'selectlayer',
                                 displayField: 'name',
                                 width: 265,
-                                store: themestore,
+                                store: singlelayerstore,
                                 queryMode: 'local',
                                 typeAhead: true
                             }, {

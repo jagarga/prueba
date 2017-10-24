@@ -74,6 +74,54 @@ function selecttheme() {
  
 }
 
+function selectgroup(selected_themes) {
+
+
+    Ext.Ajax.request({
+        url: '/Home/GetGroups?theme=' + selected_themes,
+        dataType: "json",
+        headers: { 'Content-Type': 'application/json; charset=utf-8' },
+        method: "GET",
+        async: false,
+        success: function (response) {
+            //themes = response.responseText;
+            var groups = [];
+            var result = JSON.parse(response.responseText);
+
+            for (var i in result['name'])
+                groups.push([result['name'][i]]);
+
+            Ext.define('capasmodel', {
+                extend: 'Ext.data.Model',
+                fields: [{
+                    type: 'string',
+                    name: 'name'
+                },]
+            });
+
+            var capasmodel = '[';
+
+            for (i = 0; i < groups.length; i++) {
+
+                capasmodel = capasmodel + '{"name":"' + strip(groups[i].toString()) + '"},'
+
+            }
+            capasmodel = capasmodel + ']'
+
+            capasmodel = eval(capasmodel);
+
+            window.groups = capasmodel;
+
+
+        },
+        failure: function (response) {
+            Ext.Msg.alert('Something to display the layers was wrong', response, Ext.emptyFn)
+        }
+    });
+
+}
+
+
 function strip(str) {
     return str.replace(/^\s+|\s+$/g, '');
 }
