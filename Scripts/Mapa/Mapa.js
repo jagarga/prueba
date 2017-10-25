@@ -485,7 +485,7 @@ Ext.application({
                         items: [
 
                             { //Selector de la tematica para desplegar el grupo de capas
-
+                            
                                 xtype: 'combo',
                                 fieldLabel: 'Layer Theme',
                                 id: 'selecttheme',
