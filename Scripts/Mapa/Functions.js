@@ -106,6 +106,7 @@ function selectgroup(selected_themes) {
                 capasmodel = capasmodel + '{"name":"' + strip(groups[i].toString()) + '"},'
 
             }
+
             capasmodel = capasmodel + ']'
 
             capasmodel = eval(capasmodel);

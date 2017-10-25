@@ -104,6 +104,7 @@ namespace WebApplication2.Controllers
             var group = new List<string>();
             //object theme = null;
 
+
             while (dr.Read())
             {
                 group.Add(dr[0].ToString());
