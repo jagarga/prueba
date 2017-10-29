@@ -169,6 +169,56 @@ function selectlayers(selected_themes) {
 
 }
 
+
+function displaylayers(options) {
+
+
+    Ext.Ajax.request({
+        url: '/Home/DisplayLayers?theme=' + options[0] + '&layergroup=' + options[1] + '&layer=' + options[2] + '&ext=' + options[3],
+        dataType: "json",
+        headers: { 'Content-Type': 'application/json; charset=utf-8' },
+        method: "GET",
+        async: false,
+        success: function (response) {
+            //themes = response.responseText;
+            var groups = [];
+            var result = JSON.parse(response.responseText);
+
+            var geojsonObject =
+                {
+                    'type': 'FeatureCollection',
+                    'crs': {
+                        'type': 'name',
+                        'properties': {
+                            'name': 'EPSG:3857'
+                        }
+                    },
+                    'features': [
+                        //{ 'type': 'Point', 'coordinates': [-3.7084781, 40.4113586] }
+                    ]
+                };
+
+            //Ext.Msg.alert('Javi, ah\u00ed tienes tu json, ahora vas y lo pintas!', result['name'][0], Ext.emptyFn)
+            for (var i in result['name']) {
+                geojsonObject.features.push(JSON.parse(result['name'][i]));
+            }
+
+            
+            Ext.Msg.alert('Javi, ah\u00ed tienes tu json, ahora vas y lo pintas!', JSON.stringify(geojsonObject), Ext.emptyFn)
+           
+            //geojsonObject = eval(geojsonObject);
+
+            window.geojsonPostgis = geojsonObject;
+
+
+        },
+        failure: function (response) {
+            Ext.Msg.alert('Something to display the layers was wrong', response, Ext.emptyFn)
+        }
+    });
+
+}
+
 function strip(str) {
     return str.replace(/^\s+|\s+$/g, '');
 }

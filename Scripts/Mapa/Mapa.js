@@ -84,7 +84,11 @@ var treePanel2;
 var themes; //variable global para almacenar el tema de las capas elegido por el usuario en los combobox
 var groups; //variable global para almacenar el grupo de las capas elegido por el usuario en los combobox
 var single_layer; //variable global para almacenar la capa elegida por el usuario en los combobox
-
+var selected_layer_display= null; //variable global para almacenar la capa elegida para visualizar por el usuario en los combobox
+var selected_group_display = null;
+var selected_theme_display = null;
+var options = [selected_theme_display, selected_group_display, selected_layer_display];
+var geojsonPostgis;
 
 Ext.application({
     name: 'Name_application',
@@ -172,6 +176,17 @@ Ext.application({
                 }]
             };
 
+        geojsonObject.features.push({
+            'type': 'Feature',
+            'geometry': {
+                'type': 'MultiPolygon',
+                'coordinates': [
+                    [[[-5.6755576, 38.2550051], [-5.6759405, 38.2554487], [-5.6750309, 38.2550455]],
+                    [[-5.67501, 38.255038], [-5.675011, 38.2550609], [-5.6749818, 38.2550625]],
+                    [[-5.6749792, 38.2550263], [-5.6749956, 38.2549926], [-5.6750576, 38.2550151]]]
+                ]
+            }
+        });
         var image = new ol.style.Circle({
             radius: 5,
             fill: null,
@@ -339,7 +354,6 @@ Ext.application({
 
         //PANEL LATERAL IZQUIERDO
         treePanel = Ext.create('Ext.tree.Panel', {
-            title: 'Layers',
             store: treeStore,
             border: false,
             rootVisible: false,
@@ -360,6 +374,196 @@ Ext.application({
                         ]
                     }
                 ]
+            },
+            fbar: {
+                //style: { background:'#08088A', marginTop: '0px' , borderWidth:'0px'},
+                items: [
+                    {
+                        //boton para el ejecutar el calculo de ruta
+                        xtype: 'button',
+                        text: '<div style="color: Black">Add layer</div>',
+                        height: 25,
+                        //escuchador de eventos para cuando pulsamos el raton o pasamos por encima el raton
+                        listeners: {
+                            //evento on click
+                            click: function () {
+
+
+                                //Variables para el select de capas de analisis
+
+                                selecttheme();   //funcion que hace consulta sobre postgis para obtener los nombres
+
+                                var themestore_display = Ext.create('Ext.data.Store', {
+                                    model: 'capasmodel',
+                                    data: themes
+                                });
+
+
+
+                                var singlelayerstore= Ext.create('Ext.data.Store', {
+                                    model: 'capasmodel',
+                                    data: single_layer
+                                });
+        //fin obtencion variables para el combobox de temas de capas
+
+
+
+                                Ext.create('Ext.window.Window', {
+                                    title: 'Add layer to display',
+                                    closable: true,
+                                    //closeAction: 'hide',
+                                    width: 260,
+                                    //minWidth: 200,
+                                    height: 200,
+                                    bodyStyle: 'margin: 10px;',
+                                    animCollapse: false,
+                                    border: false,
+                                    modal: true,
+
+                                    items: [{
+
+ //Selector de la tematica para desplegar el grupo de capas
+
+                                            xtype: 'combo',
+                                            fieldLabel: 'Layer Theme',
+                                            id: 'selecttheme_display',
+                                            store: themestore_display,
+                                            displayField: 'name',
+                                            value: 'Select theme',
+                                            width: 230,
+                                            queryMode: 'local',
+                                            typeAhead: true,
+                                            listeners: {
+                                                select: function (combo, records) {
+
+                                                    selected_theme_display = combo.getValue(); //sacamos el valor seleccionado
+                                                    selectgroup(selected_theme_display);  //buscamos en postgis los grupos de capas de esa tema
+                                                    //Añadimos un store con el resultado de esa busqueda
+
+                                                    var groupstore = Ext.create('Ext.data.Store', {
+                                                        model: 'capasmodel',
+                                                        data: groups
+                                                    });
+
+                                                    Ext.getCmp('selectgroup_display').bindStore(groupstore);
+
+                                                }
+                                            }
+                                        }, { //Selector del grupo de capas
+
+                                            xtype: 'combo',
+                                            fieldLabel: 'Layer Group',
+                                            id: 'selectgroup_display',
+                                            displayField: 'name',
+                                            width: 230,
+                                            //store: groupstore,
+                                            queryMode: 'local',
+                                            typeAhead: true,
+                                            listeners: {
+                                                select: function (combo, records) {
+
+                                                    selected_group_display = combo.getValue(); //sacamos el valor seleccionado
+                                                    selectlayers(selected_group_display);  //buscamos en postgis los grupos de capas de esa tema
+                                                    //Añadimos un store con el resultado de esa busqueda
+
+                                                    var singlelayersstore = Ext.create('Ext.data.Store', {
+                                                        model: 'capasmodel',
+                                                        data: single_layer
+                                                    });
+
+                                                    Ext.getCmp('selectlayer_display').bindStore(singlelayersstore);
+
+                                                }
+                                            }
+                                        }, { //Selector de la capa de cada grupo
+
+                                            xtype: 'combo',
+                                            fieldLabel: 'Single Layer',
+                                            id: 'selectlayer_display',
+                                            displayField: 'name',
+                                            width: 230,
+                                            //store: singlelayerstore,
+                                            queryMode: 'local',
+                                            typeAhead: true,
+                                            listeners: {
+                                                select: function (combo, records) {
+
+                                                    selected_layer_display = combo.getValue(); //sacamos el valor seleccionado
+                                           
+                                                }
+                                            }
+                                        },{
+                                            xtype: 'button',
+                                            text: '<div style="color: Black">Display layer</div>',
+                                            height: 25,
+                                            margin: "15 2 4 2",
+                                            //escuchador de eventos para cuando pulsamos el raton o pasamos por encima el raton
+                                            listeners: {
+                                                //evento on click
+                                                click: function () {
+
+                                                    var ex = olMap.getView().calculateExtent(olMap.getSize());
+                                                    ex = ol.proj.transformExtent(ex, ol.proj.get('EPSG:3857'), ol.proj.get('EPSG:4326'));
+                                                    options[0] = selected_theme_display;
+                                                    options[1] = selected_group_display;
+                                                    options[2] = selected_layer_display;
+                                                    options[3] = ex;
+                                                    displaylayers(options);
+
+                                                    var vector_Source = new ol.source.Vector({
+                                                        features: (new ol.format.GeoJSON()).readFeatures(geojsonPostgis, {
+                                                            dataProjection: 'EPSG:4326',
+                                                            featureProjection: 'EPSG:3857'
+                                                        })
+                                                    });
+
+                                                    var vector_Layer = new ol.layer.Vector({
+                                                        source: vector_Source,
+                                                        style: styleFunction,
+                                                        name: selected_layer_display
+                                                    });
+
+                                                    olMap.addLayer(vector_Layer);
+                                                    
+                                                    this.up('window').destroy(); //cerramos la ventana
+                                                },
+                                            }
+                                        }
+                                    ],
+                                }).show();
+
+                            },
+                        }
+
+                    }, {
+                        xtype: 'tbspacer',
+                        width: 85,
+                        plugins: 'responsive',
+                        responsiveConfig: {
+                            'width < 800': {
+                                hidden: true,
+                            },
+                            'width >= 800': {
+                                hidden: false,
+                            },
+                        },
+
+                    },
+
+                    {
+                        xtype: 'button',
+                        text: '<div style="color: Black">Remove layer</div>',
+                        height: 25,
+                        //escuchador de eventos para cuando pulsamos el raton o pasamos por encima el raton
+                        listeners: {
+                            //evento on click
+                            click: function () {
+
+                            },
+                        },
+
+                    }
+                ]
             }
         });
 
@@ -378,6 +582,7 @@ Ext.application({
         panelleft = Ext.create('Ext.form.Panel', {
             xtype: 'panel',
             region: 'west',
+            title: 'Layers',
             //width: 300,
             split: true,
             collapsible: true,
@@ -637,13 +842,7 @@ Ext.application({
                     ],
                     fbar: {
                         //style: { background:'#08088A', marginTop: '0px' , borderWidth:'0px'},
-                        items: [{
-                            xtype: 'label',
-                            id: 'distancia',
-                            text: '',
-                        },
-
-
+                        items: [
                             {
                             //boton para el ejecutar el calculo de ruta
                             xtype: 'button',

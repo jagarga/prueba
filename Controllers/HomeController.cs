@@ -113,5 +113,31 @@ namespace WebApplication2.Controllers
 
             return Json(new { name = group.ToList() }, JsonRequestBehavior.AllowGet);
         }
+
+
+        public ActionResult DisplayLayers(string theme, string layergroup, string layer, string ext)
+        {
+            // Connect to a PostgreSQL database
+            NpgsqlConnection conn = new NpgsqlConnection("Server=localhost;User Id=postgres; Password=postgres;Database=OSM_Spain;");
+            conn.Open();
+
+            // Define a query returning a single row result set
+            string query = "SELECT ST_AsGeoJSON(geom) FROM(SELECT * FROM public.points_of_interest WHERE public.points_of_interest.geom && ST_MakeEnvelope(" + ext + ", 4326) AND fclass = '" + layer + "') as layer";
+            NpgsqlCommand command = new NpgsqlCommand(query, conn);
+
+            // Execute the query and obtain the value of the first column of the first row
+            NpgsqlDataReader dr = command.ExecuteReader();
+            var group = new List<string>();
+            //object theme = null;
+
+            while (dr.Read())
+            {
+                group.Add(dr[0].ToString());
+            }
+
+            conn.Close();
+
+            return Json(new { name = group.ToList() }, JsonRequestBehavior.AllowGet);
+        }
     }
 }
