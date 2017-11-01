@@ -84,10 +84,6 @@ var treePanel2;
 var themes; //variable global para almacenar el tema de las capas elegido por el usuario en los combobox
 var groups; //variable global para almacenar el grupo de las capas elegido por el usuario en los combobox
 var single_layer; //variable global para almacenar la capa elegida por el usuario en los combobox
-var selected_layer_display= null; //variable global para almacenar la capa elegida para visualizar por el usuario en los combobox
-var selected_group_display = null;
-var selected_theme_display = null;
-var options = [selected_theme_display, selected_group_display, selected_layer_display];
 var geojsonPostgis;
 
 Ext.application({
@@ -388,8 +384,11 @@ Ext.application({
                             //evento on click
                             click: function () {
 
-
-                                //Variables para el select de capas de analisis
+                                //variable global para almacenar la capa elegida para visualizar por el usuario en los combobox
+                                var selected_layer_display = null; 
+                                var selected_group_display = null;
+                                var selected_theme_display = null;
+                                var options = [selected_theme_display, selected_group_display, selected_layer_display];
 
                                 selecttheme();   //funcion que hace consulta sobre postgis para obtener los nombres
 

@@ -120,9 +120,22 @@ namespace WebApplication2.Controllers
             // Connect to a PostgreSQL database
             NpgsqlConnection conn = new NpgsqlConnection("Server=localhost;User Id=postgres; Password=postgres;Database=OSM_Spain;");
             conn.Open();
+            string query;
 
             // Define a query returning a single row result set
-            string query = "SELECT ST_AsGeoJSON(geom) FROM(SELECT * FROM public.points_of_interest WHERE public.points_of_interest.geom && ST_MakeEnvelope(" + ext + ", 4326) AND fclass = '" + layer + "') as layer";
+            if (layergroup == "null")
+            {
+                query = "SELECT ST_AsGeoJSON(geom) FROM(SELECT * FROM public." + theme + " WHERE public." + theme + ".geom && ST_MakeEnvelope(" + ext + ", 4326)) as data";
+            }
+            else if (layer == "null")
+            {
+                query = "SELECT ST_AsGeoJSON(geom) FROM(SELECT * FROM public." + theme + " WHERE public." + theme + ".geom && ST_MakeEnvelope(" + ext + ", 4326) AND fclass = '" + layer + "') as layer";
+            }
+            else
+            {
+                query = "SELECT ST_AsGeoJSON(geom) FROM(SELECT * FROM public." + theme + " WHERE public." + theme + ".geom && ST_MakeEnvelope(" + ext + ", 4326) AND fclass = '" + layer + "') as layer";
+            }
+
             NpgsqlCommand command = new NpgsqlCommand(query, conn);
 
             // Execute the query and obtain the value of the first column of the first row
