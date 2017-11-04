@@ -115,13 +115,15 @@ namespace WebApplication2.Controllers
         }
 
 
-        public ActionResult DisplayLayers(string theme, string layergroup, string layer, string ext)
+        public ActionResult DisplayLayers(string theme, string layergroup, string layer, string ext, string type, string buffer)
         {
             // Connect to a PostgreSQL database
             NpgsqlConnection conn = new NpgsqlConnection("Server=localhost;User Id=postgres; Password=postgres;Database=OSM_Spain;");
             conn.Open();
-            string query;
+            string query = " ";
 
+            if (type == "DisplayLayers"){
+        
             // Define a query returning a single row result set
             if (layergroup == "null")
             {
@@ -129,12 +131,18 @@ namespace WebApplication2.Controllers
             }
             else if (layer == "null")
             {
-                query = "SELECT ST_AsGeoJSON(geom) FROM(SELECT * FROM public." + theme + " WHERE public." + theme + ".geom && ST_MakeEnvelope(" + ext + ", 4326) AND fclass = '" + layer + "') as layer";
+                query = "SELECT ST_AsGeoJSON(geom) FROM(SELECT * FROM public." + theme + " WHERE public." + theme + ".geom && ST_MakeEnvelope(" + ext + ", 4326) AND code::text LIKE (SELECT layer_group_code from public.layer_names where layer_group='" + layergroup + "' limit 1)||'%') as layer";
             }
             else
             {
                 query = "SELECT ST_AsGeoJSON(geom) FROM(SELECT * FROM public." + theme + " WHERE public." + theme + ".geom && ST_MakeEnvelope(" + ext + ", 4326) AND fclass = '" + layer + "') as layer";
             }
+            }else if (type == "favorable")
+            {
+                query = "SELECT ST_AsGeoJSON(ST_Buffer) FROM(SELECT ST_Buffer(geom, " + buffer + "/(6376500.0*3.14159*2.0)*360.0) FROM(SELECT * FROM public." + theme + " WHERE public." + theme + ".geom && ST_MakeEnvelope(" + ext + ", 4326) AND fclass = '" + layer + "') as layer) as buffer";
+            }
+
+
 
             NpgsqlCommand command = new NpgsqlCommand(query, conn);
 
@@ -147,10 +155,13 @@ namespace WebApplication2.Controllers
             {
                 group.Add(dr[0].ToString());
             }
-
+            
             conn.Close();
 
-            return Json(new { name = group.ToList() }, JsonRequestBehavior.AllowGet);
+            var jsonResult = Json(new { name = group.ToList() }, JsonRequestBehavior.AllowGet);
+            jsonResult.MaxJsonLength = int.MaxValue;
+            return jsonResult;
+            //return Json(new { name = group.ToList() }, JsonRequestBehavior.AllowGet);
         }
     }
 }
