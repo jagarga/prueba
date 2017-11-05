@@ -55,9 +55,9 @@ namespace WebApplication2.Controllers
             //object theme = null;
 
             while (dr.Read())
-                {
+            {
                 theme.Add(dr[0].ToString());
-                }
+            }
 
             conn.Close();
 
@@ -71,7 +71,7 @@ namespace WebApplication2.Controllers
             conn.Open();
 
             // Define a query returning a single row result set
-            string query = "SELECT distinct layer_group FROM public.layer_names where layer ='" +  theme + "'";
+            string query = "SELECT distinct layer_group FROM public.layer_names where layer ='" + theme + "'";
             NpgsqlCommand command = new NpgsqlCommand(query, conn);
 
             // Execute the query and obtain the value of the first column of the first row
@@ -113,26 +113,34 @@ namespace WebApplication2.Controllers
 
             return Json(new { name = group.ToList() }, JsonRequestBehavior.AllowGet);
         }
-        
-        public ActionResult DisplayLayers(string theme, string layergroup, string layer, string ext, int nextRegister)
+
+        public ActionResult DisplayLayers(string theme, string layergroup, string layer, string ext, string type, string buffer, int nextRegister)
         {
             // Connect to a PostgreSQL database
             NpgsqlConnection conn = new NpgsqlConnection("Server=localhost;User Id=postgres; Password=postgres;Database=OSM_Spain;");
             conn.Open();
-            string query;
+            string query = " ";
 
-            // Define a query returning a single row result set
-            if (layergroup == "null")
+            if (type == "DisplayLayers")
             {
-                query = "SELECT ST_AsGeoJSON(geom) FROM(SELECT * FROM public." + theme + " WHERE public." + theme + ".geom && ST_MakeEnvelope(" + ext + ", 4326)) as data";
+
+                // Define a query returning a single row result set
+                if (layergroup == "null")
+                {
+                    query = "SELECT ST_AsGeoJSON(geom) FROM(SELECT * FROM public." + theme + " WHERE public." + theme + ".geom && ST_MakeEnvelope(" + ext + ", 4326)) as data";
+                }
+                else if (layer == "null")
+                {
+                    query = "SELECT ST_AsGeoJSON(geom) FROM(SELECT * FROM public." + theme + " WHERE public." + theme + ".geom && ST_MakeEnvelope(" + ext + ", 4326) AND code::text LIKE (SELECT layer_group_code from public.layer_names where layer_group='" + layergroup + "' limit 1)||'%') as layer";
+                }
+                else
+                {
+                    query = "SELECT ST_AsGeoJSON(geom) FROM(SELECT * FROM public." + theme + " WHERE public." + theme + ".geom && ST_MakeEnvelope(" + ext + ", 4326) AND fclass = '" + layer + "') as layer";
+                }
             }
-            else if (layer == "null")
+            else if (type == "favorable")
             {
-                query = "SELECT ST_AsGeoJSON(geom) FROM(SELECT * FROM public." + theme + " WHERE public." + theme + ".geom && ST_MakeEnvelope(" + ext + ", 4326) AND fclass = '" + layer + "') as layer";
-            }
-            else
-            {
-                query = "SELECT ST_AsGeoJSON(geom) FROM(SELECT * FROM public." + theme + " WHERE public." + theme + ".geom && ST_MakeEnvelope(" + ext + ", 4326) AND fclass = '" + layer + "') as layer";
+                query = "SELECT ST_AsGeoJSON(ST_Buffer) FROM(SELECT ST_Buffer(geom, " + buffer + "/(6376500.0*3.14159*2.0)*360.0) FROM(SELECT * FROM public." + theme + " WHERE public." + theme + ".geom && ST_MakeEnvelope(" + ext + ", 4326) AND fclass = '" + layer + "') as layer) as buffer";
             }
 
             query += " LIMIT 10000 OFFSET " + nextRegister;

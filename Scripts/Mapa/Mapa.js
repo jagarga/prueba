@@ -149,44 +149,11 @@ Ext.application({
         });
 
 
-        //TEST GEOJSON
-        var geojsonObject =
-            {
-                'type': 'FeatureCollection',
-                'crs': {
-                    'type': 'name',
-                    'properties': {
-                        'name': 'EPSG:3857'
-                    }
-                },
-                'features': [{
-                    'type': 'Feature',
-                    'geometry': {
-                        'type': 'MultiPolygon',
-                        'coordinates': [
-                            [[[-5.6750576, 38.2550151], [-5.6750405, 38.2550487], [-5.6750309, 38.2550455]],
-                            [[-5.67501, 38.255038], [-5.675011, 38.2550609], [-5.6749818, 38.2550625]],
-                            [[-5.6749792, 38.2550263], [-5.6749956, 38.2549926], [-5.6750576, 38.2550151]]]
-                        ]
-                    }
-                }]
-            };
-
-        geojsonObject.features.push({
-            'type': 'Feature',
-            'geometry': {
-                'type': 'MultiPolygon',
-                'coordinates': [
-                    [[[-5.6755576, 38.2550051], [-5.6759405, 38.2554487], [-5.6750309, 38.2550455]],
-                    [[-5.67501, 38.255038], [-5.675011, 38.2550609], [-5.6749818, 38.2550625]],
-                    [[-5.6749792, 38.2550263], [-5.6749956, 38.2549926], [-5.6750576, 38.2550151]]]
-                ]
-            }
-        });
+        //ESTILOS GEOJSON
         var image = new ol.style.Circle({
             radius: 5,
             fill: null,
-            stroke: new ol.style.Stroke({ color: 'red', width: 1 })
+            stroke: new ol.style.Stroke({ color: 'blue', width: 2 })
         });
 
         var styles = {
@@ -195,13 +162,13 @@ Ext.application({
             }),
             'LineString': new ol.style.Style({
                 stroke: new ol.style.Stroke({
-                    color: 'green',
+                    color: 'blue',
                     width: 1
                 })
             }),
             'MultiLineString': new ol.style.Style({
                 stroke: new ol.style.Stroke({
-                    color: 'green',
+                    color: 'blue',
                     width: 1
                 })
             }),
@@ -210,11 +177,11 @@ Ext.application({
             }),
             'MultiPolygon': new ol.style.Style({
                 stroke: new ol.style.Stroke({
-                    color: 'yellow',
+                    color: 'blue',
                     width: 1
                 }),
                 fill: new ol.style.Fill({
-                    color: 'rgba(255, 255, 0, 0.1)'
+                    color: 'rgba(0, 0, 255, 0.25)'
                 })
             }),
             'Polygon': new ol.style.Style({
@@ -224,32 +191,32 @@ Ext.application({
                     width: 3
                 }),
                 fill: new ol.style.Fill({
-                    color: 'rgba(0, 0, 255, 0.1)'
+                    color: 'rgba(0, 0, 255, 0.25)'
                 })
             }),
             'GeometryCollection': new ol.style.Style({
                 stroke: new ol.style.Stroke({
-                    color: 'magenta',
+                    color: 'blue',
                     width: 2
                 }),
                 fill: new ol.style.Fill({
-                    color: 'magenta'
+                    color: 'rgba(0, 0, 255, 0.25)'
                 }),
                 image: new ol.style.Circle({
                     radius: 10,
                     fill: null,
                     stroke: new ol.style.Stroke({
-                        color: 'magenta'
+                        color: 'blue'
                     })
                 })
             }),
             'Circle': new ol.style.Style({
                 stroke: new ol.style.Stroke({
-                    color: 'red',
+                    color: 'blue',
                     width: 2
                 }),
                 fill: new ol.style.Fill({
-                    color: 'rgba(255,0,0,0.2)'
+                    color: 'rgba(0,0,255,0.2)'
                 })
             })
         };
@@ -257,21 +224,6 @@ Ext.application({
         var styleFunction = function (feature) {
             return styles[feature.getGeometry().getType()];
         };
-
-        var vectorSource = new ol.source.Vector({
-            features: (new ol.format.GeoJSON()).readFeatures(geojsonObject, {
-                dataProjection: 'EPSG:4326',
-                featureProjection: 'EPSG:3857'
-            })
-        });
-
-        var vectorLayer = new ol.layer.Vector({
-            source: vectorSource,
-            style: styleFunction,
-            name: 'OpenStreetMap Buildings'
-        });
-        //FIN TEST GEOJSON
-
 
         //group = new ol.layer.Group({
         //    layers: [layer, layer2],
@@ -294,7 +246,7 @@ Ext.application({
                     //]
                 })
             ]),
-            layers: [layer, vectorLayer],
+            layers: [layer],
             view: new ol.View({
                 projection: Projection,
                 center: ol.proj.transform([-3.68, 40.48], 'EPSG:4326', 'EPSG:3857'),
@@ -375,7 +327,7 @@ Ext.application({
                 //style: { background:'#08088A', marginTop: '0px' , borderWidth:'0px'},
                 items: [
                     {
-                        //boton para el ejecutar el calculo de ruta
+                        //boton para el ejecutar añadir una capa postgis
                         xtype: 'button',
                         text: '<div style="color: Black">Add layer</div>',
                         height: 25,
@@ -507,6 +459,8 @@ Ext.application({
                                                     options[1] = selected_group_display;
                                                     options[2] = selected_layer_display;
                                                     options[3] = ex;
+                                                    options[4] = "DisplayLayers";
+                                                    options[5] = "0"; 
 
                                                     var geojsonObject =
                                                         {
@@ -533,6 +487,16 @@ Ext.application({
                                                     }
                                                     while ((nextRegister % 10000) == 0);
 
+                                                    if (selected_group_display == null) {
+                                                        var name = selected_theme_display;
+                                                    }
+                                                    else if (selected_layer_display == null) {
+                                                        var name = selected_group_display;
+                                                    }
+                                                    else {
+                                                        var name = selected_layer_display;
+                                                    }
+
                                                     window.geojsonPostgis = geojsonObject;
 
                                                     var vector_Source = new ol.source.Vector({
@@ -545,7 +509,7 @@ Ext.application({
                                                     var vector_Layer = new ol.layer.Vector({
                                                         source: vector_Source,
                                                         style: styleFunction,
-                                                        name: selected_layer_display
+                                                        name: name
                                                     });
 
                                                     olMap.addLayer(vector_Layer);
@@ -818,7 +782,7 @@ Ext.application({
                                 store: themestore,
                                 queryMode: 'local',
                                 typeAhead: true
-                            },{ //Selector del grupo de capas
+                            }, { //Selector del grupo de capas
 
                                 xtype: 'combo',
                                 fieldLabel: 'Layer Group',
@@ -869,17 +833,17 @@ Ext.application({
                         //style: { background:'#08088A', marginTop: '0px' , borderWidth:'0px'},
                         items: [
                             {
-                            //boton para el ejecutar el calculo de ruta
-                            xtype: 'button',
-                            text: '<div style="color: Black">Calculate location</div>',
-                            height: 25,
-                            //escuchador de eventos para cuando pulsamos el raton o pasamos por encima el raton
-                            listeners: {
-                                //evento on click
-                                click: function () {
+                                //boton para el ejecutar el calculo de ruta
+                                xtype: 'button',
+                                text: '<div style="color: Black">Calculate location</div>',
+                                height: 25,
+                                //escuchador de eventos para cuando pulsamos el raton o pasamos por encima el raton
+                                listeners: {
+                                    //evento on click
+                                    click: function () {
 
-                                },
-                            }
+                                    },
+                                }
 
                             },
 

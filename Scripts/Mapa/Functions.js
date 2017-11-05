@@ -173,7 +173,7 @@ function displaylayers(options, nextRegister) {
     var result;
 
     Ext.Ajax.request({
-        url: '/Home/DisplayLayers?theme=' + options[0] + '&layergroup=' + options[1] + '&layer=' + options[2] + '&ext=' + options[3] + '&nextRegister=' + nextRegister.toString(),
+        url: '/Home/DisplayLayers?theme=' + options[0] + '&layergroup=' + options[1] + '&layer=' + options[2] + '&ext=' + options[3] + '&type=' + options[4] + '&buffer=' + options[5] + '&nextRegister=' + nextRegister.toString(),
         dataType: "json",
         headers: { 'Content-Type': 'application/json; charset=utf-8' },
         method: "GET",
