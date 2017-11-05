@@ -121,7 +121,6 @@ function selectgroup(selected_themes) {
 
 }
 
-
 function selectlayers(selected_themes) {
 
 
@@ -169,12 +168,12 @@ function selectlayers(selected_themes) {
 
 }
 
+function displaylayers(options, nextRegister) {
 
-function displaylayers(options) {
-
+    var result;
 
     Ext.Ajax.request({
-        url: '/Home/DisplayLayers?theme=' + options[0] + '&layergroup=' + options[1] + '&layer=' + options[2] + '&ext=' + options[3] + '&type=' + options[4] + '&buffer=' + options[5],
+        url: '/Home/DisplayLayers?theme=' + options[0] + '&layergroup=' + options[1] + '&layer=' + options[2] + '&ext=' + options[3] + '&nextRegister=' + nextRegister.toString(),
         dataType: "json",
         headers: { 'Content-Type': 'application/json; charset=utf-8' },
         method: "GET",
@@ -182,26 +181,14 @@ function displaylayers(options) {
         success: function (response) {
             //themes = response.responseText;
             var groups = [];
-            var result = JSON.parse(response.responseText);
-
-            for (var i in result['name']) {
-                window.geojsonPostgis.features.push(JSON.parse(result['name'][i]));
-            }
-
-            
-            //Ext.Msg.alert('Javi, ah\u00ed tienes tu json, ahora vas y lo pintas!', JSON.stringify(window.geojsonPostgis), Ext.emptyFn)
-           
-            //geojsonObject = eval(geojsonObject);
-
-            //window.geojsonPostgis = geojsonObject;
-
-
+            result = JSON.parse(response.responseText);
         },
         failure: function (response) {
             Ext.Msg.alert('Something to display the layers was wrong', response, Ext.emptyFn)
         }
     });
 
+    return result;
 }
 
 function strip(str) {

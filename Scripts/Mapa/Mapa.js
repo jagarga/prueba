@@ -84,28 +84,7 @@ var treePanel2;
 var themes; //variable global para almacenar el tema de las capas elegido por el usuario en los combobox
 var groups; //variable global para almacenar el grupo de las capas elegido por el usuario en los combobox
 var single_layer; //variable global para almacenar la capa elegida por el usuario en los combobox
-//inicializamos las varibles de las capas elegidas en las condiciones favorables
-var selected_layer = null;
-var selected_group = null;
-var selected_theme = null;
-var options = [selected_theme, selected_group, selected_layer, " ", " "];
-
-
-
-//plantilla json para añadir capas postgis
-var geojsonPostgis =
-    {
-        'type': 'FeatureCollection',
-        'crs': {
-            'type': 'name',
-            'properties': {
-                'name': 'EPSG:3857'
-            }
-        },
-        'features': [
-            //{ 'type': 'Point', 'coordinates': [-3.7084781, 40.4113586] }
-        ]
-    };
+var geojsonPostgis;
 
 Ext.application({
     name: 'Name_application',
@@ -170,12 +149,44 @@ Ext.application({
         });
 
 
-        //ESTILOS GEOJSON
-       
+        //TEST GEOJSON
+        var geojsonObject =
+            {
+                'type': 'FeatureCollection',
+                'crs': {
+                    'type': 'name',
+                    'properties': {
+                        'name': 'EPSG:3857'
+                    }
+                },
+                'features': [{
+                    'type': 'Feature',
+                    'geometry': {
+                        'type': 'MultiPolygon',
+                        'coordinates': [
+                            [[[-5.6750576, 38.2550151], [-5.6750405, 38.2550487], [-5.6750309, 38.2550455]],
+                            [[-5.67501, 38.255038], [-5.675011, 38.2550609], [-5.6749818, 38.2550625]],
+                            [[-5.6749792, 38.2550263], [-5.6749956, 38.2549926], [-5.6750576, 38.2550151]]]
+                        ]
+                    }
+                }]
+            };
+
+        geojsonObject.features.push({
+            'type': 'Feature',
+            'geometry': {
+                'type': 'MultiPolygon',
+                'coordinates': [
+                    [[[-5.6755576, 38.2550051], [-5.6759405, 38.2554487], [-5.6750309, 38.2550455]],
+                    [[-5.67501, 38.255038], [-5.675011, 38.2550609], [-5.6749818, 38.2550625]],
+                    [[-5.6749792, 38.2550263], [-5.6749956, 38.2549926], [-5.6750576, 38.2550151]]]
+                ]
+            }
+        });
         var image = new ol.style.Circle({
             radius: 5,
             fill: null,
-            stroke: new ol.style.Stroke({ color: 'blue', width: 2 })
+            stroke: new ol.style.Stroke({ color: 'red', width: 1 })
         });
 
         var styles = {
@@ -184,13 +195,13 @@ Ext.application({
             }),
             'LineString': new ol.style.Style({
                 stroke: new ol.style.Stroke({
-                    color: 'blue',
+                    color: 'green',
                     width: 1
                 })
             }),
             'MultiLineString': new ol.style.Style({
                 stroke: new ol.style.Stroke({
-                    color: 'blue',
+                    color: 'green',
                     width: 1
                 })
             }),
@@ -199,11 +210,11 @@ Ext.application({
             }),
             'MultiPolygon': new ol.style.Style({
                 stroke: new ol.style.Stroke({
-                    color: 'blue',
+                    color: 'yellow',
                     width: 1
                 }),
                 fill: new ol.style.Fill({
-                    color: 'rgba(0, 0, 255, 0.25)'
+                    color: 'rgba(255, 255, 0, 0.1)'
                 })
             }),
             'Polygon': new ol.style.Style({
@@ -213,32 +224,32 @@ Ext.application({
                     width: 3
                 }),
                 fill: new ol.style.Fill({
-                    color: 'rgba(0, 0, 255, 0.25)'
+                    color: 'rgba(0, 0, 255, 0.1)'
                 })
             }),
             'GeometryCollection': new ol.style.Style({
                 stroke: new ol.style.Stroke({
-                    color: 'blue',
+                    color: 'magenta',
                     width: 2
                 }),
                 fill: new ol.style.Fill({
-                    color: 'rgba(0, 0, 255, 0.25)'
+                    color: 'magenta'
                 }),
                 image: new ol.style.Circle({
                     radius: 10,
                     fill: null,
                     stroke: new ol.style.Stroke({
-                        color: 'blue'
+                        color: 'magenta'
                     })
                 })
             }),
             'Circle': new ol.style.Style({
                 stroke: new ol.style.Stroke({
-                    color: 'blue',
+                    color: 'red',
                     width: 2
                 }),
                 fill: new ol.style.Fill({
-                    color: 'rgba(0,0,255,0.2)'
+                    color: 'rgba(255,0,0,0.2)'
                 })
             })
         };
@@ -246,6 +257,21 @@ Ext.application({
         var styleFunction = function (feature) {
             return styles[feature.getGeometry().getType()];
         };
+
+        var vectorSource = new ol.source.Vector({
+            features: (new ol.format.GeoJSON()).readFeatures(geojsonObject, {
+                dataProjection: 'EPSG:4326',
+                featureProjection: 'EPSG:3857'
+            })
+        });
+
+        var vectorLayer = new ol.layer.Vector({
+            source: vectorSource,
+            style: styleFunction,
+            name: 'OpenStreetMap Buildings'
+        });
+        //FIN TEST GEOJSON
+
 
         //group = new ol.layer.Group({
         //    layers: [layer, layer2],
@@ -268,7 +294,7 @@ Ext.application({
                     //]
                 })
             ]),
-            layers: [layer],
+            layers: [layer, vectorLayer],
             view: new ol.View({
                 projection: Projection,
                 center: ol.proj.transform([-3.68, 40.48], 'EPSG:4326', 'EPSG:3857'),
@@ -349,7 +375,7 @@ Ext.application({
                 //style: { background:'#08088A', marginTop: '0px' , borderWidth:'0px'},
                 items: [
                     {
-                        //boton para el ejecutar añadir una capa postgis
+                        //boton para el ejecutar el calculo de ruta
                         xtype: 'button',
                         text: '<div style="color: Black">Add layer</div>',
                         height: 25,
@@ -362,7 +388,7 @@ Ext.application({
                                 var selected_layer_display = null; 
                                 var selected_group_display = null;
                                 var selected_theme_display = null;
-                                var options = [selected_theme_display, selected_group_display, selected_layer_display, " ", "0"];
+                                var options = [selected_theme_display, selected_group_display, selected_layer_display];
 
                                 selecttheme();   //funcion que hace consulta sobre postgis para obtener los nombres
 
@@ -481,38 +507,8 @@ Ext.application({
                                                     options[1] = selected_group_display;
                                                     options[2] = selected_layer_display;
                                                     options[3] = ex;
-                                                    options[4] = "DisplayLayers";
-                                                    options[5] = "0";
-                                                    displaylayers(options);
 
-
-                                                    if (selected_group_display == null) {
-                                                        var name = selected_theme_display;
-                                                    }
-                                                    else if (selected_layer_display == null) {
-                                                        var name = selected_group_display;
-                                                    }
-                                                    else {
-                                                        var name = selected_layer_display;
-                                                    }
-
-                                                    var vector_Source = new ol.source.Vector({
-                                                        features: (new ol.format.GeoJSON()).readFeatures(geojsonPostgis, {
-                                                            dataProjection: 'EPSG:4326',
-                                                            featureProjection: 'EPSG:3857'
-                                                        })
-                                                    });
-
-                                                    var vector_Layer = new ol.layer.Vector({
-                                                        source: vector_Source,
-                                                        style: styleFunction,
-                                                        name: name
-                                                    });
-
-                                                    olMap.addLayer(vector_Layer);
-
-                                                    //reinicializamos el geojson
-                                                    geojsonPostgis =
+                                                    var geojsonObject =
                                                         {
                                                             'type': 'FeatureCollection',
                                                             'crs': {
@@ -525,6 +521,34 @@ Ext.application({
                                                                 //{ 'type': 'Point', 'coordinates': [-3.7084781, 40.4113586] }
                                                             ]
                                                         };
+
+                                                    var nextRegister = 0;
+                                                    do
+                                                    {
+                                                        var result = displaylayers(options, nextRegister);
+                                                        for (var i in result['name']) {
+                                                            geojsonObject.features.push(JSON.parse(result['name'][i]));
+                                                        }
+                                                        nextRegister += result['name'].length;
+                                                    }
+                                                    while ((nextRegister % 10000) == 0);
+
+                                                    window.geojsonPostgis = geojsonObject;
+
+                                                    var vector_Source = new ol.source.Vector({
+                                                        features: (new ol.format.GeoJSON()).readFeatures(geojsonPostgis, {
+                                                            dataProjection: 'EPSG:4326',
+                                                            featureProjection: 'EPSG:3857'
+                                                        })
+                                                    });
+
+                                                    var vector_Layer = new ol.layer.Vector({
+                                                        source: vector_Source,
+                                                        style: styleFunction,
+                                                        name: selected_layer_display
+                                                    });
+
+                                                    olMap.addLayer(vector_Layer);
                                                     
                                                     this.up('window').destroy(); //cerramos la ventana
                                                 },
@@ -704,7 +728,7 @@ Ext.application({
                                 listeners: {
                                     select: function (combo, records) {
 
-                                        selected_theme = combo.getValue(); //sacamos el valor seleccionado
+                                        var selected_theme = combo.getValue(); //sacamos el valor seleccionado
                                         selectgroup(selected_theme);  //buscamos en postgis los grupos de capas de esa tema
                                         //Añadimos un store con el resultado de esa busqueda
 
@@ -730,7 +754,7 @@ Ext.application({
                                 listeners: {
                                     select: function (combo, records) {
 
-                                        selected_group = combo.getValue(); //sacamos el valor seleccionado
+                                        var selected_group = combo.getValue(); //sacamos el valor seleccionado
                                         selectlayers(selected_group);  //buscamos en postgis los grupos de capas de esa tema
                                         //Añadimos un store con el resultado de esa busqueda
 
@@ -752,18 +776,11 @@ Ext.application({
                                 width: 265,
                                 //store: singlelayerstore,
                                 queryMode: 'local',
-                                typeAhead: true,
-                                listeners: {
-                                    select: function (combo, records) {
-
-                                        selected_layer = combo.getValue(); //sacamos el valor seleccionado
-
-                                    }
-                                }
+                                typeAhead: true
                             }, {
                                 xtype: 'textfield',
                                 fieldLabel: 'Maximum influence distance',
-                                id: 'buffer_fav_dist',
+                                id: 'buffer_dist',
                                 value: "100",
                                 width: 210,
                             }, {
@@ -776,45 +793,7 @@ Ext.application({
                                     //evento on click
                                     click: function () {
 
-                                        var ex = olMap.getView().calculateExtent(olMap.getSize());
-                                        ex = ol.proj.transformExtent(ex, ol.proj.get('EPSG:3857'), ol.proj.get('EPSG:4326'));
-                                        options[0] = selected_theme;
-                                        options[1] = selected_group;
-                                        options[2] = selected_layer;
-                                        options[3] = ex;
-                                        options[4] = "favorable";
-                                        options[5] = Ext.getCmp('buffer_fav_dist').getValue();
-                                        displaylayers(options);
 
-                                        var vector_Source = new ol.source.Vector({
-                                            features: (new ol.format.GeoJSON()).readFeatures(geojsonPostgis, {
-                                                dataProjection: 'EPSG:4326',
-                                                featureProjection: 'EPSG:3857'
-                                            })
-                                        });
-
-                                        var favorable_Layer = new ol.layer.Vector({
-                                            source: vector_Source,
-                                            style: styleFunction,
-                                            name: "Favorable conditions"
-                                        });
-
-                                        olMap.addLayer(favorable_Layer);
-
-                                        //reinicializamos el geojson
-                                        geojsonPostgis =
-                                            {
-                                                'type': 'FeatureCollection',
-                                                'crs': {
-                                                    'type': 'name',
-                                                    'properties': {
-                                                        'name': 'EPSG:3857'
-                                                    }
-                                                },
-                                                'features': [
-                                                    //{ 'type': 'Point', 'coordinates': [-3.7084781, 40.4113586] }
-                                                ]
-                                            };
 
                                     },
                                 }
